@@ -1,0 +1,65 @@
+1. Basic information
+Team Number : 24
+Student ID# of Submitter:1566050, 1566814 
+Name of Submitter: Jiayuan Hu, Haiyu Yang
+ID#s and Names for others on the Team
+
+
+2. Meta-data
+- Show your meta-data design (Tables and Columns table) and information about each column.
+	We created a table called tableName with a vector of attributes (attrs). If this table already exists, it will return an error.
+
+3. Internal Record Format
+- Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that your team hasn't implemented this feature.
+  ____________________________________________________________________________________
+  | NBIT |   field 0   |   field 1   |   field 2   |   field 3   | value for field 0 |
+  | 0000 | offset, len |     int     |     float   |     float   |  string1 .......  | 
+  |__________________________________________________________________________________|
+- Describe how you store a VarChar field.
+      The origin data format provided for insertion is as follows:
+        (1) n bytes for passing the null information about each field
+        (2) if the field contains a VarChar type value, this format should include:
+            [4 bytes for the string's length] [some bytes for the string "Tom"]
+        (3) if the field's type is int or float, put the real value to the record.
+
+- Describe how you deal with an update and delete.
+	Delete: we first deal with the delete methods, when a record is deleted we use memmove to move the records that appear after it to its place. After this operation, there is no free space in the middle of the record area. Also, we keep updating the slotHeader and the SlotDirectoryRecordEntry.
+	Update:  there are 3 steps we need to follow:
+		1. Delete the records according to the given RID
+		2. Update the slot directory header and insert the slotDirectoryEntry
+		3. If there are no enough space for a new record, we use the  "forwarding addresses" discussed in class to solve this problem. Rather than put an (offset,length) value to the original slot, we put the (new_pageid,new_slotid) at the slot the entry. In this case, if an entry in the slot directory has a positive value as its offset, that is the offset and length value. But if the value is negative, then this entry is a forwarding address. 
+
+4. Page Format
+- Show your page format design.
+    __________________________________________________________________________________
+    | record 1 ----------------------------------------------------->| record  2 ---- |
+    |-------------------------->| record  3-------------------------------------------|
+    |------------>| record 3 --->| free space                                         |
+    |                                                                                 |           
+    |                                                                                 |     
+    |_____________________________________________________________|r/l|r/l|r/l| N |off| 
+
+     	Our format design is the same as Variable Length Records page format presented in Slide 16 of Lecture 3. 
+	When the free space whthin a page is not enough for a new record, first we scan all pages for an available space, if all pages are full, a new page is created and appended to the end of our file.
+- Describe how you deal with an update and delete.
+	For update, if a page has enough space, then replace the record with a new one, otherwise, created a new page using newRecordBasedPage() method. For delete operations, we first look into if there is only one record, if so, this page will be freed after deletion.
+	
+
+5. File Format
+- Show your file format design
+	File are made of pages and each page takes exactly 4096 bytes.
+
+
+
+6. Implementation Detail
+- Other implementation details goes here.
+	Scan: Because we implemented a forwarding address in updating tables, for the data in the slot table, there are 3 categories:
+		1. (Offset, length) for a record that's on its original page
+		2. A forwarding address, giving new rid where record is located. 
+		3. (Offset, length) for a record that's not on its original page
+	In rm.cc, the scan method has direct access to the actual data, we kept the RBMF_Interator as a private field in the RM_Iterator and to distinguish between these three categories. 	
+
+
+
+7. Other (optional)
+- Freely use this section to tell us about things that are related to the project 2, but not related to the other sections (optional)

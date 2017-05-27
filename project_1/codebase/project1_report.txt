@@ -1,0 +1,64 @@
+1. Basic information
+Student ID : 1566050, 1566814 
+Student Name : Jiayuan Hu, Haiyu Yang
+OS (bit) : MacOS 64, Linux 64
+gcc version :gcc 4.2.1, gcc version 6.3.1 20161221 (Red Hat 6.3.1-1) (GCC) 
+
+
+2. Internal Record Format
+- Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that you haven't implemented this feature.
+   __________________________________________________________________________________
+  | NBIT |   field 0   |   field 1   |   field 2   |   field 3   | value for field 0 |
+  | 0000 | offset, len |     int     |     float   |     float   |  string1 .......  | 
+  |__________________________________________________________________________________|
+
+
+- Describe how you store a VarChar field.
+    The origin data format provided for insertion is as follows:
+        (1) n bytes for passing the null information about each field
+        (2) if the field contains a VarChar type value, this format should include:
+            [4 bytes for the string's length] [some bytes for the string "Tom"]
+        (3) if the field's type is int or float, put the real value to the record.
+
+    In our implementation, we created a record format converter function in rbfm.cc,
+    which outputs a new format like below:
+        (1) n bytes for passing the null information about each field
+        (2) if the field's type is int or float, use 4 bytes for its real value
+        (3) if the field's type is VarChar, use 4 bytes for its offset and length, and append its
+            real value at the end of the record
+
+    This new record format corresponds to the variable-length records presented in Slide 11 of Lecture 3, Which
+    is an O(1) operation. Because we use 4 bytes to store each field or field information, suppose the nullFieldsIndicator's
+     length is l1, when we need to access the ith field,
+        (1)if this field stores a value of int or float type, its offset is l1 + 4 * i.
+        (2)if this field is a VarChar type, we can get its offset and length at the address of l1 + 4 * i .
+
+
+
+3. Page Format
+- Show your page format design
+    __________________________________________________________________________________
+    | record 1 ----------------------------------------------------->| record  2 ---- |
+    |-------------------------->| record  3-------------------------------------------|
+    |------------>| record 3 --->| free space                                         |
+    |                                                                                 |           
+    |                                                                                 |     
+    |_____________________________________________________________|r/l|r/l|r/l| N |off| 
+
+    Our format design is the same as Variable Length Records page format presented in Slide 16 of Lecture 3. 
+    When the free space whthin a page is not enough for a new record, first we scan all pages for
+    an available space, if all pages are full, a new page is created and appended to the end of our file.
+
+4. Implementation Detail
+- Other implementation details goes here.
+  The requirement " That is, if the last (current) page has enough space, insert a new record into this page. 
+  If not, find the first page with free space large enough to store the record, e.g., looking from the beginning of the file"
+  We satisfy this accurately. However, if we can relax relax the requirement, it's better to first check current page, then next,
+  then loops back to the first, until all pages are checked.
+  We used valgrind to check memory leakage, and fixed a bug in test code.
+  
+5. Other (optional)
+- Freely use this section to tell us about things that are related to the project 1, but not related to the other sections (optional)
+  We found there're some portability issue in current code. 
+  In the provided test code, it is assumed sizeof(int)==sizeof(float)==4. However we think it would not be the same in 32bit machine.
+  We didn't make our code 100% portable, since the test case is not portable.
