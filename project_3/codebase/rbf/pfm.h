@@ -22,6 +22,7 @@ typedef char byte;
 #define PAGE_SIZE 4096
 #include <string>
 #include <climits>
+#include <vector>
 using namespace std;
 
 class FileHandle;
@@ -55,6 +56,10 @@ public:
     unsigned readPageCounter;
     unsigned writePageCounter;
     unsigned appendPageCounter;
+    unsigned numPages; 
+    unsigned currentPageNum;
+    void *currentPage;
+    vector<unsigned int> freeSpace;
     
     FileHandle();                                                       // Default constructor
     ~FileHandle();                                                      // Destructor

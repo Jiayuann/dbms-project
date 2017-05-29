@@ -46,7 +46,7 @@ int testCase_2(const string &indexFileName, const Attribute &attribute)
     assert(rc == success && "indexManager::collectCounterValues() should not fail.");
 
     cerr << endl << "Before Insert - R W A: " << readPageCount << " " <<  writePageCount << " " << appendPageCount << endl;
-
+    cerr << "Insertion should "  <<endl;
     // insert entry
     rc = indexManager->insertEntry(ixfileHandle, attribute, &key, rid);
     assert(rc == success && "indexManager::insertEntry() should not fail.");

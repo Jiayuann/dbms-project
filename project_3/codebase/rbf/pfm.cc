@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <string>
-
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -70,7 +69,10 @@ RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
     // If we fail, error
     if (pFile == NULL)
         return PFM_OPEN_FAILED;
-
+    fseek(pFile, 0, SEEK_END); // seek to end of file
+    int length = ftell(pFile); // get current file pointer
+    fseek(pFile, 0, SEEK_SET); // seek back to beginning of file
+    fileHandle.numPages = length / PAGE_SIZE;
     fileHandle.setfd(pFile);
 
     return SUCCESS;
@@ -80,11 +82,17 @@ RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
 RC PagedFileManager::closeFile(FileHandle &fileHandle)
 {
     FILE *pFile = fileHandle.getfd();
-
+   
     // If not an open file, error
     if (pFile == NULL)
         return 1;
-
+    if (fileHandle.currentPage != NULL) {
+            fileHandle.writePage(fileHandle.currentPageNum, fileHandle.currentPage); 
+            fileHandle.currentPage = NULL;
+            fileHandle.currentPageNum = -1;
+    }
+    fileHandle.freeSpace.clear();
+    fileHandle.numPages = 0;
     // Flush and close the file
     fclose(pFile);
 
@@ -108,6 +116,9 @@ FileHandle::FileHandle()
     writePageCounter = 0;
     appendPageCounter = 0;
     _fd = NULL;
+    numPages = 0;
+    currentPage = NULL;
+    currentPageNum = -1;
 }
 
 
@@ -169,6 +180,7 @@ RC FileHandle::appendPage(const void *data)
     {
         fflush(_fd);
         appendPageCounter++;
+        numPages++;
         return SUCCESS;
     }
     return FH_WRITE_FAILED;
