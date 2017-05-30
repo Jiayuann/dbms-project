@@ -72,160 +72,7 @@ RC IndexManager::closeFile(IXFileHandle &ixfileHandle)
 
 RC IndexManager::insertEntry(IXFileHandle &ixFileHandle, const Attribute &attribute, const void *key, const RID &rid)
 {
-   // extract root
-    void *child = ixFileHandle.getRoot();
-    void *parent = NULL;
-    int childPageNum = ixFileHandle.getRootPageNum();
-    int parentPageNum = 0;
-
-    // Loop over traverse and save left and right pointers until leaf page
-    while(true) {
-        // Test if node is full (This is what makes top-down, top-down
-        if(!hasEnoughSpace(child, attribute)) {
-            // if not enough space we need to split
-            splitChild(child, parent, attribute, ixFileHandle, key, childPageNum, parentPageNum);
-
-            // if parent != root, free
-            if (parentPageNum != ixFileHandle.getRootPageNum()) {
-                if (parent != NULL) {
-                    free(parent);
-                    parent = NULL;
-                }
-            }
-            cout<< "line" << 94 <<endl;
-
-            if (child != NULL) {
-                free(child);
-                child = NULL;
-            }
-            return insertEntry(ixFileHandle, attribute, key, rid);
-        }
-
-        // if node == null then we need to create a leaf page
-        if (getNextNodeByKey(child, parent,  attribute, ixFileHandle, key,childPageNum, parentPageNum) == -1) {
-            return -1;
-        }
-
-        // if child is null (first entry into the root node, SHOULD NEVER HAPPEN OTHERWISE)
-        if(child == NULL) {
-            void *leftPointerData = malloc(PAGE_SIZE);
-            void *rightPointerData = malloc(PAGE_SIZE);
-
-            // Initialize Left Pointer
-            int leftPointerNum = ixFileHandle.getAvailablePageNumber();
-            ixFileHandle.initializeNewNode(leftPointerData, TypeLeaf);
-            ixFileHandle.getHandle()->appendPage(leftPointerData);
-
-            // Initialize Right Pointer
-            int rightPointerNum = ixFileHandle.getAvailablePageNumber();
-            ixFileHandle.initializeNewNode(rightPointerData, TypeLeaf);
-            ixFileHandle.getHandle()->appendPage(rightPointerData);
-
-            // Link left pointer to right pointer
-            ixFileHandle.setRightPointer(leftPointerData, rightPointerNum);
-
-            // Link left page to data (I realize this is an additional (write/append, but it will only happen 1, ever, so who cares ahha)
-            ixFileHandle.getHandle()->writePage(leftPointerNum, leftPointerData);
-
-            // Write left, key, right data to the parent page
-            int offSet = 0;
-
-            switch (attribute.type) {
-                case TypeReal:
-                case TypeInt:
-                    memcpy((char*) parent + offSet, &leftPointerNum, sizeof(int));
-                    offSet += sizeof(int);
-                    memcpy((char*) parent + offSet, key, sizeof(int));
-                    offSet += sizeof(int);
-                    memcpy((char*) parent + offSet, &rightPointerNum, sizeof(int));
-                    offSet += sizeof(int);
-
-                    break;
-                case TypeVarChar:
-                    memcpy((char*) parent + offSet, &leftPointerNum, sizeof(int));
-                    offSet += sizeof(int);
-
-                    int length;
-                    memcpy(&length, (char*)key, sizeof(int));
-                    int keySize = length + sizeof(int);
-                    memcpy((char*)parent + offSet, (char*)key, keySize);
-                    offSet += keySize;
-
-                    memcpy((char*) parent + offSet, &rightPointerNum, sizeof(int));
-                    offSet += sizeof(int);
-
-                    break;
-            }
-
-            // update freespace
-            int freeSpace = ixFileHandle.getFreeSpace(parent);
-            ixFileHandle.setFreeSpace(parent, freeSpace - offSet);
-
-            // Write page to memory (GOING TO ASSUME ROOT)
-            ixFileHandle.setRoot(parent);
-
-            // free the new child nodes
-            if (leftPointerData != NULL) free(leftPointerData);
-            if (rightPointerData != NULL) free(rightPointerData);
-
-            // Re-run insert Entry with the newly added root key and pages
-            return insertEntry(ixFileHandle, attribute, key, rid);
-        }
-        cout<< "line" << 175 <<endl;
-        // test if leaf node
-        NodeType type = ixFileHandle.getNodeType(child);
-        if (type == TypeLeaf) {
-            // do we maybe need to  check for enough space here? and then split?
-            break;
-        }
-    }
-
-    // If the node does not have enough space, we need to split the node
-    if(!hasEnoughSpace(child, attribute)) {
-        // if not enough space we need to split
-        splitChild(child, parent, attribute, ixFileHandle, key, childPageNum, parentPageNum);
-
-        // if parent != root, free
-        if (parentPageNum != ixFileHandle.getRootPageNum()) {
-            if (parent != NULL) {
-                free(parent);
-                parent = NULL;
-            }
-        }
-
-        if (child != NULL) {
-            free(child);
-            child = NULL;
-        }
-
-        // Now the parent and children have been created/modified, reinsert into tree
-        return insertEntry(ixFileHandle, attribute, key, rid);
-    }
-
-    // Here we are guaranteed to have a leaf node in child and we can safely insert
-    // the new data into the leaf node;
-    if (insertIntoLeaf(ixFileHandle, child, key, attribute, rid) == -1) {
-        return -1;
-    }
-
-    // write the node to file
-    if(ixFileHandle.getHandle()->writePage(childPageNum, child) == -1) {
-        return -1;
-    }
-
-    // if parent != root, free
-    if (parentPageNum != ixFileHandle.getRootPageNum()) {
-        if (parent != NULL) {
-            free(parent);
-            parent = NULL;
-        }
-    }
-
-    if (child != NULL) {
-        free(child);
-        child = NULL;
-    }
-    return 0;
+   return -1;
 }
 
 RC IndexManager::deleteEntry(IXFileHandle &ixfileHandle, const Attribute &attribute, const void *key, const RID &rid)
@@ -252,6 +99,9 @@ RC IndexManager::deleteEntry(IXFileHandle &ixfileHandle, const Attribute &attrib
         }
     }
     if(deleteFromLeaf(ixfileHandle, child, key, attribute, rid) == -1){
+        return -1;
+    }
+    if(ixfileHandle.getHandle()->writePage(childPageNum, child) == -1){
         return -1;
     }
     if(ixfileHandle.getHandle()->writePage(childPageNum, child) == -1){
@@ -888,6 +738,9 @@ RC IndexManager::insertIntoLeaf(IXFileHandle &ixFileHandle, void *child, const v
             return -1;
     }
 
+    void *shiftdata = malloc(100);
+    memcpy((char*)data + offset, (char*)shiftdata, 4);
+    
 
     // Iterate over keys
     int keyLength;
