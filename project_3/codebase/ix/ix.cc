@@ -276,6 +276,7 @@ RC IndexManager::scan(IXFileHandle &ixfileHandle,
     if(ixfileHandle.getHandle() == NULL){
         return -1;
     }
+
     ix_ScanIterator.setHandle(ixfileHandle);
     ix_ScanIterator.setAttribute(attribute);
     ix_ScanIterator.setLowKeyValues(lowKey, lowKeyInclusive, attribute);

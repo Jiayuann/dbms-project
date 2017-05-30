@@ -9,20 +9,41 @@ Team number (e.g., 01) :
 - Show your meta-data page of an index design if you have any. 
 
 
+
 3. Index Entry Format
-- Show your index entry design (structure). 
+- Show your index entry design (structure).
+    The index leaf entry design depends on the type of inserted attribute.
+    If the inserted attribute is TypeReal:
+        |Key|Left Sibling|Right Sibling|rid.pageNum|rid.slotNum|
+    If the inserted attribute is TypeVarChar:
+        |VarChar length|Key|Left Sibling|Right Sibling|rid.pageNum|rid.slotNum|
 
 
 4. Page Format
 - Show your internal-page (non-leaf node) design.
+    The structure of interior nodes(directory key) can be visualized as a sequence of alternating page pointers and keys.
+    |Page Number|Non-Leaf Type Number|Number of Entries|First Entry Pointer|2nd entry Pointer|3rd Entry Pointer|
+    |freeSpace...|
+    |1st Entry|2nd Entry|3rd Entry|
 
 - Show your leaf-page (leaf node) design.
-
+    The leaf nodes store the data in the form of (key, RID). All leaf nodes are organized into a linked list
+    of pages.
+    |Page Number|Leaf Type Number|Number of Entries|First Entry Pointer|2nd entry Pointer|3rd Entry Pointer|
+    |freeSpace...|
+    |1st Entry|2nd Entry|3rd Entry|
 
 5. Implementation Detail
 - Have you implemented non-lazy deletion? Choose Yes or No: Also provide implementation details if yes.
 
+
 - Other implementation details:
+    Insert into a b+ tree:
+        Find the corrent leaf L, if L has enough space, done.
+        Else, split L and copy up the middle key.
+    Delete from a b+ tree:
+        If L is half-full, done.
+        If L has d-1 entries, try to re-distribute and borrow from siblings.
 
 
 6. Other (optional)
