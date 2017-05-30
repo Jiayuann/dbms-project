@@ -7,8 +7,8 @@ Team number (e.g., 01) : 24
 
 2. Meta-data page in an index file
 - Show your meta-data page of an index design if you have any. 
-    We allocate a page in the front of an index file with a root page number,
-    Root page number: find the root page.
+    We allocate a page in the front of an index file with a root page number.
+    Root page number: to find the root page.
 
 3. Index Entry Format
 - Show your index entry design (structure).

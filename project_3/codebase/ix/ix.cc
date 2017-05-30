@@ -709,7 +709,6 @@ RC IndexManager::deleteFromLeaf(IXFileHandle &ixFileHandle, void *child, const v
 
     // free the comparison key
     if (comparisonKey != NULL) free(comparisonKey);
-
     return 0;
 }
 RC IndexManager::insertIntoLeaf(IXFileHandle &ixFileHandle, void *child, const void *key, const Attribute &attribute, const RID &rid) {
@@ -738,9 +737,6 @@ RC IndexManager::insertIntoLeaf(IXFileHandle &ixFileHandle, void *child, const v
             return -1;
     }
 
-    void *shiftdata = malloc(100);
-    memcpy((char*)data + offset, (char*)shiftdata, 4);
-    
 
     // Iterate over keys
     int keyLength;
