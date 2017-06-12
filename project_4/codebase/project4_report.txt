@@ -1,0 +1,39 @@
+1. Basic information
+Team number (e.g., 01) : 24
+#1 Student Name :  
+#2 Student Name : 
+
+
+2. Catalog information about Index
+- Show your catalog information about an index (table, column, etc.). 
+    The tuple value 
+    (1) For INT and REAL: use 4 bytes; 
+    (2) For VARCHAR: use 4 bytes for the length, followed by that number of characters.
+    Index information:
+    Names of the attributes, tables' name   
+    If we scan, store get all matched tuple with our attribute name.
+        
+3. Index Nested-Loop Join
+- Describe how your Index Nested-Loop Join works.
+INLJoin is constructed with a Iterator and an IndexScan. 
+
+-getNextTuple() keeps track of two loops (inner and outer) and returns tuples that 
+equal within each other.
+    It uses an index on the inner loop and not on the outer. 
+    while loops is implemented to search for every matched value
+	foreach tuple r in R do Use Index on S
+	    foreach tuple s in S where ri == sj do
+		    add <r, s> to result
+
+4. Implementation Detail
+- Have you added your own source file (.cc or .h)?
+    No.
+
+- Have you implemented any optional features? Then, describe them here.
+
+- Other implementation details:
+
+
+5. Other (optional)
+- Freely use this section to tell us about things that are related to Project 4, but not related to the other sections (optional)
+
